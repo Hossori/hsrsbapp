@@ -1,0 +1,16 @@
+/node_modules
+
+# Supabase
+/supabase/.temp
+/supabase/.branches/
+
+# Environment
+.env
+.env.*
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+ignored-*

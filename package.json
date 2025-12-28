@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "npm": "^11.7.0",
+    "supabase": "^2.70.5"
+  }
+}
