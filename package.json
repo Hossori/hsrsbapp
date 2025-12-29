@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@angular/cli": "^21.0.4",
+    "deno": "^2.6.3",
     "npm": "^11.7.0",
     "supabase": "^2.70.5"
   }
