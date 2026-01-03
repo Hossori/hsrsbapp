@@ -4,7 +4,7 @@ export const routes: Routes = [
   {
     path: 'readingRecorder',
     loadComponent: () =>
-      import('./features/reading-recorder/components/reading-recorder-home/reading-recorder-home')
-        .then(m => m.ReadingRecorderHome)
+      import('./features/reading-recorder/reading-recorder')
+        .then(m => m.ReadingRecorder)
   }
 ];
