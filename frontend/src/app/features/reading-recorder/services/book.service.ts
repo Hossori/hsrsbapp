@@ -1,8 +1,7 @@
-import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { catchError, map, Observable, of } from 'rxjs';
 import { Book } from '../models';
-import { environment } from '../../../../environments/environment';
 
 /**
  * Supabase Functionsから返されるレスポンスの型
@@ -24,8 +23,6 @@ interface BookResponse {
 })
 export class BookService {
     private readonly http = inject(HttpClient);
-    private readonly supabaseUrl = environment.supabaseUrl;
-    private readonly supabaseAnonKey = environment.supabaseAnonKey;
 
     /**
      * 書籍一覧を取得
@@ -34,11 +31,11 @@ export class BookService {
     getBooks(): Observable<Book[]> {
         return this.http
             .post<BookResponse[]>(
-                `${this.supabaseUrl}/functions/v1/get-books`,
+                `https://iaicqgeozyvqawvisvso.supabase.co/functions/v1/get-books`,
                 {},
                 {
                     headers: {
-                        'apikey': this.supabaseAnonKey,
+                        'apikey': 'sb_publishable_AnLAszlIUZH6wGDKb7BubA_duSDuHux',
                         'Content-Type': 'application/json',
                     },
                 }
@@ -69,11 +66,11 @@ export class BookService {
     getBooksWithRetry(retryCount: number = 3): Observable<Book[]> {
         return this.http
             .post<BookResponse[]>(
-                `${this.supabaseUrl}/functions/v1/get-books`,
+                `https://iaicqgeozyvqawvisvso.supabase.co/functions/v1/get-books`,
                 {},
                 {
                     headers: {
-                        'apikey': this.supabaseAnonKey,
+                        'apikey': 'sb_publishable_AnLAszlIUZH6wGDKb7BubA_duSDuHux',
                         'Content-Type': 'application/json',
                     },
                 }

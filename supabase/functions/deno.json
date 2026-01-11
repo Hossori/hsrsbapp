@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window"]
+  },
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "@supabase/functions-js/edge-runtime.d.ts": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+    "@shared/": "./_shared/"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}
