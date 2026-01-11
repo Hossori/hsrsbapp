@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "functions:serve": "supabase functions serve",
+    "functions:deploy": "node scripts/deploy-function.js"
+  },
   "dependencies": {
     "@angular/cli": "^21.0.4",
     "deno": "^2.6.3",

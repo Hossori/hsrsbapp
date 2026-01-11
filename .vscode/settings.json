@@ -5,6 +5,7 @@
   ],
   "deno.config": "./supabase/functions/deno.json",
   "deno.lint": true,
+  "deno.importMap": "./supabase/functions/deno.json",
   "deno.unstable": [
     "bare-node-builtins",
     "byonm",
