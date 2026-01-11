@@ -26,7 +26,11 @@
             ],
             "styles": [
               "src/styles.css"
-            ]
+            ],
+            "define": {
+              "process.env['SUPABASE_URL']": "\"$SUPABASE_URL\"",
+              "process.env['SUPABASE_ANON_KEY']": "\"$SUPABASE_ANON_KEY\""
+            }
           },
           "configurations": {
             "production": {
