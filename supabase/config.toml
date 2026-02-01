@@ -385,7 +385,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 enabled = true
 # TODO supabaseのedge_functionsにてservice_roleの仕組みを使っているためfalse。apiを外だしする場合は再検討
 verify_jwt = false
-import_map = "./functions/get-book/deno.json"
+import_map = "./functions/import-map.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
 entrypoint = "./functions/get-book/index.ts"

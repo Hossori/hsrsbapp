@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window"]
+  },
+  "importMap": "./import-map.json",
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
+}
