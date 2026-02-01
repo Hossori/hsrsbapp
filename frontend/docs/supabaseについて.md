@@ -1,7 +1,9 @@
 # supabase functions
 
 - supabase functions serve によりデプロイせずともローカルで動かせる。
-- 環境変数について、本番環境用のものはクラウドに置いておく。（ダッシュボードで操作あるいは cli で操作。）ローカル用のものは supabase/.env.local に置いておく。（コミットしない。）
+- 環境変数について、本番環境用のものはクラウドに置いておく。（ダッシュボードで操作あるいは
+  cli で操作。）ローカル用のものは supabase/.env.local
+  に置いておく。（コミットしない。）
 
 ## Deno 開発環境設定
 
@@ -13,7 +15,8 @@ VSCode/Cursor で IntelliSense（補完・型情報・定義ジャンプ）を�
 
 ```
 supabase/functions/
-├── deno.json          # 統一設定ファイル（import map含む）
+├── deno.json          # 統一設定ファイル（editor向け）
+├── import-map.json    # CLI向けの import map（supabase functions serve / deploy）
 ├── _shared/           # 共通モジュール
 │   ├── cors.ts
 │   └── supabase.ts
@@ -25,18 +28,46 @@ supabase/functions/
 
 `supabase/functions/deno.json` で以下を一元管理:
 
-- **import map**: パスエイリアスを定義し、import 文を簡潔にする
+- **import map**: `importMap` で `supabase/functions/import-map.json` を参照
 - **compilerOptions**: Deno 用の型定義を指定
 
 ```json
 {
-  "imports": {
-    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
-    "@supabase/functions-js/edge-runtime.d.ts": "jsr:@supabase/functions-js/edge-runtime.d.ts",
-    "@shared/": "./_shared/"
-  }
+  "importMap": "./import-map.json"
 }
 ```
+
+### supabase functions serve / deploy の import map
+
+Supabase CLI は `import_map`
+を参照するため、`supabase/functions/import-map.json` を用意し、
+`supabase/config.toml` から参照する。`deno.json` は editor
+向けの設定として残す。
+
+### functions deploy の共通 import map
+
+デプロイ時は `deno.json` の `importMap` を参照するため、
+`supabase functions deploy <function-name>` を直接実行する。
+`npm run functions:deploy -- <function-name>` でも同じ。
+
+### 新しい function を作るときの注意
+
+各 function に `deno.json` を作る必要はない。 共通の
+`supabase/functions/deno.json` と `import-map.json` を使う運用。 ただし
+`supabase/config.toml` に以下を追加する:
+
+```
+[functions.<function-name>]
+enabled = true
+verify_jwt = false
+import_map = "./functions/import-map.json"
+entrypoint = "./functions/<function-name>/index.ts"
+```
+
+### deno.lock について
+
+CLI の Deno と `deno.lock` のバージョンが合わない場合はエラーになる。 その場合は
+`supabase/functions/deno.lock` を削除して再デプロイする。
 
 ### VSCode 設定（.vscode/settings.json）
 
@@ -50,7 +81,8 @@ supabase/functions/
 
 ### プロジェクトローカルの Deno
 
-Deno はグローバルインストールせず、npm パッケージとしてプロジェクト内に閉じ込めている:
+Deno はグローバルインストールせず、npm
+パッケージとしてプロジェクト内に閉じ込めている:
 
 ```
 node_modules/deno/deno.exe  ← 本体バイナリ
@@ -68,12 +100,12 @@ import map を使うことで、`npm:` や `jsr:` プレフィックスを省略
 
 ```typescript
 // 外部ライブラリ
-import { createClient } from '@supabase/supabase-js';
-import '@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from "@supabase/supabase-js";
+import "@supabase/functions-js/edge-runtime.d.ts";
 
 // 共通モジュール（@shared/ エイリアス）
-import { getCorsHeaders } from '@shared/cors.ts';
-import { createServiceRoleClient } from '@shared/supabase.ts';
+import { getCorsHeaders } from "@shared/cors.ts";
+import { createServiceRoleClient } from "@shared/supabase.ts";
 ```
 
 ### キャッシュ更新
