@@ -25,6 +25,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Generated artifacts
+**/dist/
+**/generated/
+
 # OS files (Windows)
 *.swp
 *.swo

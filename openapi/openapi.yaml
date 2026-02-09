@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info:
+  title: Sample API
+  version: 0.1.0
+paths:
+  /books:
+    $ref: ./features/books/sample.yaml#/paths/~1books
+  /users:
+    $ref: ./features/users/sample.yaml#/paths/~1users
