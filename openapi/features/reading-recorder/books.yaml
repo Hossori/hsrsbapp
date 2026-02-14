@@ -13,14 +13,20 @@ paths:
                   items:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        title:
-                          type: string
-                      required:
-                        - id
-                        - title
+                      $ref: '#/schemas/Book'
                 required:
                   - items
+schemas:
+  Book:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      created_at:
+        type: datetime
+      updated_at:
+        type: datetime
+      user_id:
+        type: string
