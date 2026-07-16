@@ -1,3 +1,44 @@
-@for (book of books(); track book) {
-<app-reading-recorder-book-list-item [book]="book" />
+@if (!auth.initialized()) {
+  <p>読み込み中...</p>
+} @else if (!auth.isAuthenticated()) {
+  <section aria-labelledby="login-heading">
+    <h1 id="login-heading">ログイン</h1>
+    <p>読書記録を表示するにはログインしてください。</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div>
+        <label for="email">メールアドレス</label>
+        <input id="email" type="email" formControlName="email" autocomplete="username" />
+      </div>
+      <div>
+        <label for="password">パスワード</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+        />
+      </div>
+
+      @if (loginError()) {
+        <p role="alert">{{ loginError() }}</p>
+      }
+
+      <button type="submit" [disabled]="isSubmitting()">ログイン</button>
+    </form>
+  </section>
+} @else {
+  <section aria-labelledby="books-heading">
+    <div>
+      <h1 id="books-heading">読書記録</h1>
+      <p>{{ auth.user()?.email }}</p>
+      <button type="button" (click)="onLogout()">ログアウト</button>
+    </div>
+
+    @for (book of books(); track book.id) {
+      <app-reading-recorder-book-list-item [book]="book" />
+    } @empty {
+      <p>書籍がありません。</p>
+    }
+  </section>
 }

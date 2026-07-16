@@ -1,95 +1,83 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, map, Observable, of } from 'rxjs';
-import { Book } from '../models';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
+import { Book, BookStatus } from '../models';
+import { AuthService } from '../../../core/auth.service';
+import { getSupabasePublicConfig } from '../../../core/supabase-config';
 
 /**
  * Supabase Functionsから返されるレスポンスの型
  */
 interface BookResponse {
-    id: string;
-    name: string;
-    created_at: string;
-    updated_at: string;
-    user_id: string;
+  id: string;
+  user_id: string;
+  title: string;
+  author: string | null;
+  isbn: string | null;
+  total_pages: number | null;
+  status: BookStatus;
+  rating: number | null;
+  review: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  cover_url: string | null;
+  google_books_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function toBook(book: BookResponse): Book {
+  return {
+    id: book.id,
+    userId: book.user_id,
+    title: book.title,
+    author: book.author,
+    isbn: book.isbn,
+    totalPages: book.total_pages,
+    status: book.status,
+    rating: book.rating,
+    review: book.review,
+    startedAt: book.started_at,
+    finishedAt: book.finished_at,
+    coverUrl: book.cover_url,
+    googleBooksId: book.google_books_id,
+    createdAt: book.created_at,
+    updatedAt: book.updated_at,
+  };
 }
 
 /**
  * 書籍データを取得するサービス
- * Angular HttpClientを使用した実装（推奨）
  */
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class BookService {
-    private readonly http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
 
-    /**
-     * 書籍一覧を取得
-     * @returns Observable<Book[]>
-     */
-    getBooks(): Observable<Book[]> {
-        return this.http
-            .post<BookResponse[]>(
-                `https://iaicqgeozyvqawvisvso.supabase.co/functions/v1/get-books`,
-                {},
-                {
-                    headers: {
-                        'apikey': 'sb_publishable_AnLAszlIUZH6wGDKb7BubA_duSDuHux',
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-            .pipe(
-                // スネークケースをキャメルケースに変換
-                map((books) =>
-                    books.map((book) => ({
-                        id: book.id,
-                        name: book.name,
-                        createdAt: book.created_at,
-                        updatedAt: book.updated_at,
-                        userId: book.user_id,
-                    }))
-                ),
-                // エラーハンドリング
-                catchError((error) => {
-                    console.error('Failed to fetch books:', error);
-                    return of([]); // エラー時は空配列を返す
-                })
-            );
+  /**
+   * 書籍一覧を取得（要ログイン・RLS 適用）
+   */
+  getBooks(): Observable<Book[]> {
+    const token = this.auth.getAccessToken();
+    if (!token) {
+      return throwError(() => new Error('ログインが必要です'));
     }
 
-    /**
-     * リトライ機能付きで書籍を取得
-     * @param retryCount リトライ回数
-     */
-    getBooksWithRetry(retryCount: number = 3): Observable<Book[]> {
-        return this.http
-            .post<BookResponse[]>(
-                `https://iaicqgeozyvqawvisvso.supabase.co/functions/v1/get-books`,
-                {},
-                {
-                    headers: {
-                        'apikey': 'sb_publishable_AnLAszlIUZH6wGDKb7BubA_duSDuHux',
-                        'Content-Type': 'application/json',
-                    },
-                }
-            )
-            .pipe(
-                // スネークケースをキャメルケースに変換
-                map((books) =>
-                    books.map((book) => ({
-                        id: book.id,
-                        name: book.name,
-                        createdAt: book.created_at,
-                        updatedAt: book.updated_at,
-                        userId: book.user_id,
-                    }))
-                ),
-                catchError((error) => {
-                    console.error('Failed to fetch books after retries:', error);
-                    return of([]);
-                })
-            );
-    }
+    const { url, anonKey } = getSupabasePublicConfig();
+    const headers = new HttpHeaders({
+      apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+
+    return this.http.post<BookResponse[]>(`${url}/functions/v1/get-books`, {}, { headers }).pipe(
+      map((books) => books.map(toBook)),
+      catchError((error) => {
+        console.error('Failed to fetch books:', error);
+        return of([]);
+      }),
+    );
+  }
 }

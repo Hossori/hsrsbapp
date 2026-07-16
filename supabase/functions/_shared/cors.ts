@@ -1,125 +1,121 @@
 /**
- * CORS設定の共通モジュール
+ * CORS 設定
  *
- * ALLOWED_ORIGIN環境変数でCORSを制御します。
- * - ALLOWED_ORIGIN未設定: すべてのオリジンを許可（ローカル開発用）
- * - ALLOWED_ORIGIN設定済み: 指定したオリジンのみ許可（本番用）
+ * ALLOWED_ORIGINS: カンマ区切りの許可 Origin リスト（本番必須）
+ * 例: http://localhost:4200,https://example.com
+ *
+ * - リクエスト Origin がリストに含まれる場合のみ反映（reflect）
+ * - 本番（*.supabase.co）で未設定 / 不一致の場合は ACAO を付けない（fail-closed）
+ * - ローカル（127.0.0.1 / localhost）で未設定のときのみ "*" を許容
+ * - "*" のときは Credentials を付けない
  */
 
+const LOCAL_SUPABASE_HOST_PATTERN = /localhost|127\.0\.0\.1/;
+
+const parseAllowedOrigins = (): string[] => {
+  const raw =
+    Deno.env.get("ALLOWED_ORIGINS") ?? Deno.env.get("ALLOWED_ORIGIN") ?? "";
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+};
+
+const isLocalRuntime = (): boolean => {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  return LOCAL_SUPABASE_HOST_PATTERN.test(url);
+};
+
 /**
- * 許可するオリジンを取得
- * @returns 許可するオリジン
+ * 許可する Access-Control-Allow-Origin を決定する。
+ * 許可できない場合は null（ヘッダー非付与 = ブラウザがブロック）。
  */
-const getAllowedOrigin = (): string => {
-  const allowedOrigin: string | undefined = Deno.env.get("ALLOWED_ORIGIN");
-  if (!isProduction()) {
-    // 開発環境
-    return "*";
-  } else {
-    // 本番環境
-    if (allowedOrigin === undefined) {
-      // CORS未設定の場合
-      throw new Error("ALLOWED_ORIGIN must be set in production");
-    } else {
-      return allowedOrigin;
-    }
+const resolveAllowedOrigin = (req: Request): string | null => {
+  const requestOrigin = req.headers.get("Origin");
+  const allowedOrigins = parseAllowedOrigins();
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
   }
-}
 
-/**
- * 本番環境かどうかを判定
- */
-const isProduction = (): boolean => {
-  return Deno.env.get("SUPABASE_URL")?.includes("supabase.co") ?? false;
+  if (allowedOrigins.includes("*")) {
+    return "*";
+  }
+
+  // ローカル開発のみ、未設定時は緩める
+  if (isLocalRuntime() && allowedOrigins.length === 0) {
+    return requestOrigin ?? "*";
+  }
+
+  return null;
 };
 
 /**
- * 開発環境用CORS Headers
- * ローカル開発時に使用（すべてのオリジンを許可）
+ * 環境・リクエストに応じた CORS Headers を返す
  */
-export const devCorsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-/**
- * 本番環境用CORS Headers（テンプレート）
- * 実際の使用時は環境変数 ALLOWED_ORIGIN を設定してください
- */
-export const prodCorsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": getAllowedOrigin(),
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  // セキュリティ強化用ヘッダー（本番環境推奨）
-  "Access-Control-Allow-Credentials": "true",
-};
-
-/**
- * 環境に応じたCORS Headersを取得
- * 推奨: この関数を使用して環境に応じた設定を自動適用
- */
-export const getCorsHeaders = (): Record<string, string> => {
-  const origin = getAllowedOrigin();
+export const getCorsHeaders = (req: Request): Record<string, string> => {
+  const allowOrigin = resolveAllowedOrigin(req);
 
   const headers: Record<string, string> = {
-    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type",
+    Vary: "Origin",
   };
 
-  // 本番環境ではCredentialsを許可
-  if (isProduction()) {
-    headers["Access-Control-Allow-Credentials"] = "true";
+  if (allowOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+    if (allowOrigin !== "*") {
+      headers["Access-Control-Allow-Credentials"] = "true";
+    }
   }
 
   return headers;
 };
 
 /**
- * CORS preflightリクエスト用のレスポンスを生成
+ * CORS preflight リクエスト用のレスポンス
  */
-export const handleCorsPreflightRequest = (): Response => {
+export const handleCorsPreflightRequest = (req: Request): Response => {
   return new Response(null, {
     status: 204,
     headers: {
-      ...getCorsHeaders(),
-      "Access-Control-Max-Age": "86400", // 24時間キャッシュ
+      ...getCorsHeaders(req),
+      "Access-Control-Max-Age": "86400",
     },
   });
 };
 
 /**
- * CORSヘッダーを含むJSONレスポンスを生成
+ * CORS ヘッダー付き JSON レスポンス
  */
 export const jsonResponse = (
+  req: Request,
   data: unknown,
-  status: number = 200
+  status: number = 200,
 ): Response => {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json",
-      ...getCorsHeaders(),
+      ...getCorsHeaders(req),
     },
   });
 };
 
 /**
- * CORSヘッダーを含むエラーレスポンスを生成
+ * CORS ヘッダー付きエラーレスポンス
  */
 export const errorResponse = (
+  req: Request,
   message: string,
-  status: number = 500
+  status: number = 500,
 ): Response => {
   return new Response(JSON.stringify({ error: message }), {
     status,
     headers: {
       "Content-Type": "application/json",
-      ...getCorsHeaders(),
+      ...getCorsHeaders(req),
     },
   });
 };

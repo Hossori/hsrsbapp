@@ -17,16 +17,67 @@ paths:
                 required:
                   - items
 schemas:
+  BookStatus:
+    type: string
+    enum:
+      - wishlist
+      - reading
+      - finished
+      - dropped
   Book:
     type: object
     properties:
       id:
-        type: integer
-      name:
         type: string
-      created_at:
-        type: datetime
-      updated_at:
-        type: datetime
+        format: uuid
       user_id:
         type: string
+        format: uuid
+      title:
+        type: string
+      author:
+        type: string
+        nullable: true
+      isbn:
+        type: string
+        nullable: true
+      total_pages:
+        type: integer
+        nullable: true
+      status:
+        $ref: '#/schemas/BookStatus'
+      rating:
+        type: integer
+        minimum: 1
+        maximum: 5
+        nullable: true
+      review:
+        type: string
+        nullable: true
+      started_at:
+        type: string
+        format: date
+        nullable: true
+      finished_at:
+        type: string
+        format: date
+        nullable: true
+      cover_url:
+        type: string
+        nullable: true
+      google_books_id:
+        type: string
+        nullable: true
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+    required:
+      - id
+      - user_id
+      - title
+      - status
+      - created_at
+      - updated_at

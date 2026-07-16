@@ -59,7 +59,7 @@ Supabase CLI は `import_map`
 ```
 [functions.<function-name>]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/import-map.json"
 entrypoint = "./functions/<function-name>/index.ts"
 ```
